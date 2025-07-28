@@ -2,6 +2,9 @@ package com.example.iamservice.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.FieldDefaults;
+
+import java.time.LocalDate;
 
 @Entity
 @Table(name = "users")
@@ -9,16 +12,19 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class User {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    String id;
 
     @Column(nullable = false, unique = true)
-    private String email;
+    String email;
+
+    String fullname;
 
     @Column(nullable = false)
-    private String password;
+    String password;
 
-    private String role = "USER";  // mặc định là USER
+    LocalDate dob;
 }
