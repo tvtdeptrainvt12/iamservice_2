@@ -8,7 +8,8 @@ public enum ErrorCode {
     UNCATEGORIZED(9999, "Lỗi không xác định :>>"),
     USER_EXISTED(1002, " Email đã tồn tại"),
     INCORRECT_FORMAT(1003, "Không đúng định dạng"),
-    NOT_BLANK_PASSWORD(1004, " tối thiểu ba ký tự")
+    NOT_BLANK_PASSWORD(1004, " tối thiểu ba ký tự"),
+    USER_NOT_EXISTED(1005, " Email không tồn tại")
     ;
     private int code;
     private String message;

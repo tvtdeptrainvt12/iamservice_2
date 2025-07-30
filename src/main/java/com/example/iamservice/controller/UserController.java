@@ -5,7 +5,7 @@ import com.example.iamservice.dto.request.UserCreateRequest;
 import com.example.iamservice.dto.request.UserUpdateRequest;
 import com.example.iamservice.dto.response.UserResponse;
 import com.example.iamservice.entity.User;
-import com.example.iamservice.service.impl.UserService;
+import com.example.iamservice.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
