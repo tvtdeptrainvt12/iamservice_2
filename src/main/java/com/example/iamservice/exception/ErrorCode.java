@@ -9,7 +9,8 @@ public enum ErrorCode {
     USER_EXISTED(1002, " Email đã tồn tại"),
     INCORRECT_FORMAT(1003, "Không đúng định dạng"),
     NOT_BLANK_PASSWORD(1004, " tối thiểu ba ký tự"),
-    USER_NOT_EXISTED(1005, " Email không tồn tại")
+    USER_NOT_EXISTED(1005, " Email không tồn tại"),
+    UNAUTHENTICATED(1006, "authenticated")
     ;
     private int code;
     private String message;
