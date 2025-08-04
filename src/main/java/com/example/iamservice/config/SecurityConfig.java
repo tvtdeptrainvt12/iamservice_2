@@ -19,7 +19,6 @@ import org.springframework.security.web.SecurityFilterChain;
 public class SecurityConfig {
     String[] PUBLIC_ENDPOINTS = {
             "/users/**",
-            "/api/auth/**",
             "/api/auth/token",
             "/api/auth/introspect",
             "/api/auth/logout",
