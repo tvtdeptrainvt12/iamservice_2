@@ -3,6 +3,7 @@ package com.example.iamservice.controller;
 import com.example.iamservice.dto.request.ApiResponse;
 import com.example.iamservice.dto.request.AuthRequest;
 import com.example.iamservice.dto.request.IntrospectRequest;
+import com.example.iamservice.dto.request.LogoutRequest;
 import com.example.iamservice.dto.response.AuthResponse;
 import com.example.iamservice.dto.response.IntrospectResponse;
 import com.example.iamservice.service.AuthService;
@@ -37,6 +38,12 @@ public class AuthController {
         var result = authService.introspect(request);
         return ApiResponse.<IntrospectResponse>builder()
                 .result(result)
+                .build();
+    }
+    @PostMapping("/logout")
+    ApiResponse<Void> logout(@RequestBody LogoutRequest request) throws ParseException, JOSEException {
+        authService.logout(request);
+        return ApiResponse.<Void>builder()
                 .build();
     }
 }
