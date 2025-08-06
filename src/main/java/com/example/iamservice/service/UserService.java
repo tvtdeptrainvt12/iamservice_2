@@ -1,5 +1,6 @@
 package com.example.iamservice.service;
 
+import com.example.iamservice.dto.request.ChangePasswordRequest;
 import com.example.iamservice.dto.request.UserCreateRequest;
 import com.example.iamservice.dto.request.UserUpdateRequest;
 import com.example.iamservice.dto.response.UserResponse;
@@ -24,6 +25,7 @@ public class UserService {
 
     UserRepository userRepository;
     UserMapper userMapper;
+    PasswordEncoder passwordEncoder;
 
     public User createUser(UserCreateRequest request) {
 
@@ -56,5 +58,14 @@ public class UserService {
     public UserResponse getUser(String id) {
         return userMapper.toUserResponse(userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User not found")));
+    }
+    public void changePassword(String email, ChangePasswordRequest request){
+        var user = userRepository.findByEmail(email)
+                .orElseThrow(() ->new AppException(ErrorCode.USER_NOT_EXISTED));
+        if(!passwordEncoder.matches(request.getOldPassword(), user.getPassword())){
+            throw new AppException(ErrorCode.UNAUTHENTICATED);
+        }
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(user);
     }
 }

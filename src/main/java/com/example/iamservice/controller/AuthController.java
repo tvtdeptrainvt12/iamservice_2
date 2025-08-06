@@ -1,9 +1,6 @@
 package com.example.iamservice.controller;
 
-import com.example.iamservice.dto.request.ApiResponse;
-import com.example.iamservice.dto.request.AuthRequest;
-import com.example.iamservice.dto.request.IntrospectRequest;
-import com.example.iamservice.dto.request.LogoutRequest;
+import com.example.iamservice.dto.request.*;
 import com.example.iamservice.dto.response.AuthResponse;
 import com.example.iamservice.dto.response.IntrospectResponse;
 import com.example.iamservice.service.AuthService;
@@ -44,6 +41,14 @@ public class AuthController {
     ApiResponse<Void> logout(@RequestBody LogoutRequest request) throws ParseException, JOSEException {
         authService.logout(request);
         return ApiResponse.<Void>builder()
+                .build();
+    }
+    @PostMapping("/refresh")
+    ApiResponse<AuthResponse> authenticate(@RequestBody RefreshRequest request)
+            throws ParseException, JOSEException {
+        var result = authService.refreshToken(request);
+        return ApiResponse.<AuthResponse>builder()
+                .result(result)
                 .build();
     }
 }
