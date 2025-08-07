@@ -6,15 +6,21 @@ import com.example.iamservice.dto.request.UserCreateRequest;
 import com.example.iamservice.dto.request.UserUpdateRequest;
 import com.example.iamservice.dto.response.UserResponse;
 import com.example.iamservice.entity.User;
+import com.example.iamservice.repository.UserRepository;
 import com.example.iamservice.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.security.core.Authentication;
+import org.springframework.web.multipart.MultipartFile;
 
 
+import java.io.IOException;
+import java.security.Principal;
 import java.util.List;
 
 @RestController
@@ -24,6 +30,7 @@ import java.util.List;
 public class UserController {
     @Autowired
     private UserService userService;
+    private final UserRepository userRepository;
 
     @PostMapping
     ApiResponse<User> createUser(@RequestBody UserCreateRequest request){
@@ -57,5 +64,25 @@ public class UserController {
         String email = authentication.getName();
         userService.changePassword(email, request);
         return ResponseEntity.ok("Password changed successfully");
+    }
+    @PostMapping("/forgot-password")
+    public ResponseEntity<String> forgotPassword(@RequestParam String email) {
+        userService.sendOtp(email);
+        return ResponseEntity.ok("OTP đã được gửi đến email của bạn");
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<String> resetPassword(
+            @RequestParam String email,
+            @RequestParam String otp,
+            @RequestParam String newPassword) {
+        userService.verifyOtpAndChangePassword(email, otp, newPassword);
+        return ResponseEntity.ok("Mật khẩu đã được đổi thành công");
+    }
+    @PostMapping("/upload-avatar")
+    public ResponseEntity<?> uploadAvatar(@RequestParam("file") MultipartFile file) throws IOException {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        userService.uploadAvatar(file, email);
+        return ResponseEntity.ok("Upload successful");
     }
 }

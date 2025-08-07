@@ -27,4 +27,7 @@ public class User {
     String password;
 
     LocalDate dob;
+
+    @Column(name = "avatar_url")
+    String avatar;
 }
