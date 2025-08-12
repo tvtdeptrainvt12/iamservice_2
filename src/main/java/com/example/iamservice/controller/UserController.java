@@ -8,7 +8,9 @@ import com.example.iamservice.dto.response.UserResponse;
 import com.example.iamservice.entity.User;
 import com.example.iamservice.repository.UserRepository;
 import com.example.iamservice.service.UserService;
+import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -20,17 +22,17 @@ import org.springframework.web.multipart.MultipartFile;
 
 
 import java.io.IOException;
-import java.security.Principal;
 import java.util.List;
 
 @RestController
 @RequestMapping("/users")
 @Slf4j
 @RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class UserController {
     @Autowired
-    private UserService userService;
-    private final UserRepository userRepository;
+    UserService userService;
+    UserRepository userRepository;
 
     @PostMapping
     ApiResponse<User> createUser(@RequestBody UserCreateRequest request){
@@ -40,13 +42,23 @@ public class UserController {
     }
 
     @GetMapping
-    List<User> getUsers(){
-        return userService.getUsers();
+    ApiResponse<List<UserResponse>> getUsers(){
+
+        var authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        log.info("Email: {}",authentication.getName());
+        authentication.getAuthorities().forEach(grantedAuthority -> log.info(grantedAuthority.getAuthority()));
+
+        return ApiResponse.<List<UserResponse>>builder()
+                .result(userService.getUsers())
+                .build();
     }
 
-    @GetMapping("/{userId}")
-    UserResponse getUser(@PathVariable("userId") String userId){
-        return userService.getUser(userId);
+    @GetMapping("/myInfo")
+    ApiResponse<UserResponse> getMyInfo(){
+        return ApiResponse.<UserResponse>builder()
+                .result(userService.getMyInfo())
+                .build();
     }
 
     @PutMapping("/{userId}")
