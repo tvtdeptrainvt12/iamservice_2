@@ -5,6 +5,7 @@ import lombok.*;
 import lombok.experimental.FieldDefaults;
 
 import java.time.LocalDate;
+import java.util.Set;
 
 @Entity
 @Table(name = "users")
@@ -30,4 +31,6 @@ public class User {
 
     @Column(name = "avatar_url")
     String avatar;
+
+    Set<String> roles;
 }
