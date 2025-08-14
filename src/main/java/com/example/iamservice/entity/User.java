@@ -32,5 +32,6 @@ public class User {
     @Column(name = "avatar_url")
     String avatar;
 
-    Set<String> roles;
+    @ManyToMany
+    Set<Role> roles;
 }

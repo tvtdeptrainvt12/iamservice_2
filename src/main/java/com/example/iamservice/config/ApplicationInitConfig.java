@@ -32,7 +32,7 @@ public class ApplicationInitConfig {
                 User user = User.builder()
                         .email("admin@gmail.com")
                         .password(passwordEncoder.encode("admin"))
-                        .roles(roles)
+                        //.roles(roles)
                         .build();
                 userRepository.save(user);
                 log.warn("admin please change it");
