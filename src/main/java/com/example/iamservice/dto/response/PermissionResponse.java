@@ -3,18 +3,12 @@ package com.example.iamservice.dto.response;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
-import java.time.LocalDate;
-import java.util.Set;
-
 @Data
+@Builder
 @AllArgsConstructor
 @NoArgsConstructor
-@Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class UserResponse {
-    String id;
-    String email;
-    String fullname;
-    LocalDate dob;
-    Set<RoleResponse> roles;
+public class PermissionResponse {
+    String name;
+    String description;
 }
