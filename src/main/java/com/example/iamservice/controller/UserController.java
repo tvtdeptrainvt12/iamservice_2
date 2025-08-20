@@ -8,6 +8,7 @@ import com.example.iamservice.dto.response.UserResponse;
 import com.example.iamservice.entity.User;
 import com.example.iamservice.repository.UserRepository;
 import com.example.iamservice.service.UserService;
+import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -15,6 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.security.core.Authentication;
@@ -30,24 +32,27 @@ import java.util.List;
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class UserController {
-    @Autowired
+
     UserService userService;
     UserRepository userRepository;
 
     @PostMapping
-    ApiResponse<User> createUser(@RequestBody UserCreateRequest request){
-        ApiResponse<User> apiResponse = new ApiResponse<>();
-        apiResponse.setResult(userService.createUser(request));
-        return apiResponse;
+    @PreAuthorize("hasPermission('ROLE_ADMIN', 'CREATE_DATA')")
+    ApiResponse<UserResponse> createUser(@RequestBody @Valid UserCreateRequest request){
+        return ApiResponse.<UserResponse>builder()
+                .result(userService.createUser(request))
+                .build();
     }
 
     @GetMapping
+    @PreAuthorize("hasPermission('ROLE_ADMIN', 'READ_DATA')")
     ApiResponse<List<UserResponse>> getUsers(){
 
         var authentication = SecurityContextHolder.getContext().getAuthentication();
 
         log.info("Email: {}",authentication.getName());
-        authentication.getAuthorities().forEach(grantedAuthority -> log.info(grantedAuthority.getAuthority()));
+        authentication.getAuthorities()
+                .forEach(grantedAuthority -> log.info(grantedAuthority.getAuthority()));
 
         return ApiResponse.<List<UserResponse>>builder()
                 .result(userService.getUsers())
@@ -55,6 +60,7 @@ public class UserController {
     }
 
     @GetMapping("/myInfo")
+    @PreAuthorize("hasPermission('ROLE_USER', 'READ_DATA')")
     ApiResponse<UserResponse> getMyInfo(){
         return ApiResponse.<UserResponse>builder()
                 .result(userService.getMyInfo())
@@ -62,6 +68,7 @@ public class UserController {
     }
 
     @PutMapping("/{userId}")
+    @PreAuthorize("hasPermission('ROLE_USER', 'UPDATE_DATA')")
     UserResponse updateUser(@PathVariable String userId, @RequestBody UserUpdateRequest request){
         return userService.updateUser(userId, request);
     }
@@ -72,6 +79,7 @@ public class UserController {
         return "User has been deleted";
     }
     @PostMapping("/change-password")
+    @PreAuthorize("hasPermission('ROLE_USER', 'UPDATE_DATA')")
     public ResponseEntity<?> changePassword(@RequestBody ChangePasswordRequest request, Authentication authentication){
         String email = authentication.getName();
         userService.changePassword(email, request);

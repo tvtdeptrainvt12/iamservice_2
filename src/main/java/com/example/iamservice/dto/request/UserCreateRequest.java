@@ -18,7 +18,7 @@ public class UserCreateRequest {
     @Email(message = "INCORRECT_FORMAT")
     String email;
     @NotBlank
-    String fullname;
+    String username;
     @NotBlank
     @Size(min = 3, message = "NOT_BLANK_PASSWORD")
     String password;
