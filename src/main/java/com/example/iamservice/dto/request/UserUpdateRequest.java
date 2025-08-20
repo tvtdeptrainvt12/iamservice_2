@@ -12,7 +12,7 @@ import java.util.List;
 @NoArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class UserUpdateRequest {
-    String fullname;
+    String username;
     String password;
     LocalDate dob;
 

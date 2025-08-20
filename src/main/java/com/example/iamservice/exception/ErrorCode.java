@@ -6,13 +6,15 @@ import org.springframework.http.HttpStatusCode;
 
 @Getter
 public enum ErrorCode {
-    INVALID_KEY(1001,"lỗi message key", HttpStatus.INTERNAL_SERVER_ERROR),
-    UNCATEGORIZED(9999, "Lỗi không xác định :>>",  HttpStatus.BAD_REQUEST),
+    UNCATEGORIZED_EXCEPTION(9999, "Uncategorized error", HttpStatus.INTERNAL_SERVER_ERROR),
+    INVALID_KEY(1001,"lỗi message key", HttpStatus.BAD_REQUEST),
     USER_EXISTED(1002, " Email đã tồn tại", HttpStatus.BAD_REQUEST),
     INCORRECT_FORMAT(1003, "Không đúng định dạng", HttpStatus.BAD_REQUEST),
     NOT_BLANK_PASSWORD(1004, " tối thiểu ba ký tự", HttpStatus.BAD_REQUEST),
     USER_NOT_EXISTED(1005, " Email không tồn tại", HttpStatus.BAD_REQUEST),
-    UNAUTHENTICATED(1006, "authenticated", HttpStatus.UNAUTHORIZED)
+    UNAUTHENTICATED(1006, "authenticated", HttpStatus.UNAUTHORIZED),
+    UNAUTHORIZED(1007, "You do not have permission", HttpStatus.FORBIDDEN),
+    INVALID_DOB(1008, "Your age must be at least {min}", HttpStatus.BAD_REQUEST),
     ;
     private int code;
     private String message;
