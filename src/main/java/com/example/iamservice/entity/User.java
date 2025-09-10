@@ -38,7 +38,11 @@ public class User {
 
     @ManyToMany
     Set<Role> roles;
-    
+
     @Column(nullable = false)
     boolean deleted = false;
+
+    @Column(nullable = false, columnDefinition = "boolean default false")
+    private boolean block;
+
 }

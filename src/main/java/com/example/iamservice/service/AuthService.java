@@ -73,6 +73,9 @@ public class AuthService {
     public AuthResponse authenticate(AuthRequest request){
         var user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+        if(user.isBlock()){
+            throw new AppException(ErrorCode.USER_BLOCK);
+        }
 
         PasswordEncoder passwordEncoder = new BCryptPasswordEncoder(10);
         boolean authenticated = passwordEncoder.matches(request.getPassword(),

@@ -85,7 +85,8 @@ public class UserController {
     }
     @PostMapping("/change-password")
     @PreAuthorize("hasPermission('ROLE_USER', 'UPDATE_DATA')")
-    public ResponseEntity<?> changePassword(@RequestBody ChangePasswordRequest request, Authentication authentication){
+    public ResponseEntity<?> changePassword(@RequestBody ChangePasswordRequest request,
+                                            Authentication authentication){
         String email = authentication.getName();
         userService.changePassword(email, request);
         return ResponseEntity.ok("Password changed successfully");
@@ -109,5 +110,21 @@ public class UserController {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         userService.uploadAvatar(file, email);
         return ResponseEntity.ok("Upload successful");
+    }
+    @PostMapping("/{id}/block")
+    @PreAuthorize("hasPermission('ROLE_USER', 'REJECT_POST')")
+    public ApiResponse<String> blockUser(@PathVariable String id){
+        userService.lockUser(id);
+        return ApiResponse.<String>builder()
+                .result("user da bi khoa")
+                .build();
+    }
+    @PostMapping("/{id}/unblock")
+    @PreAuthorize("hasPermission('ROLE_USER', 'APPROVE_POST')")
+    public ApiResponse<String> unlockUser(@PathVariable String id){
+        userService.unlockUser(id);
+        return ApiResponse.<String>builder()
+                .result("user da mo khoa")
+                .build();
     }
 }
