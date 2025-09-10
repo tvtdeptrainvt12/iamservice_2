@@ -78,6 +78,11 @@ public class UserController {
         userService.deleteUser(userId);
         return "User has been deleted";
     }
+    @DeleteMapping("/delete/{id}")
+    public ResponseEntity<String> deleteSoft(@PathVariable String id){
+        userService.deleteSoft(id);
+        return ResponseEntity.ok("user soft delete");
+    }
     @PostMapping("/change-password")
     @PreAuthorize("hasPermission('ROLE_USER', 'UPDATE_DATA')")
     public ResponseEntity<?> changePassword(@RequestBody ChangePasswordRequest request, Authentication authentication){

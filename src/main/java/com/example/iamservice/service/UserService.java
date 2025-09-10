@@ -166,4 +166,8 @@ public class UserService {
         user.setAvatar(imageUrl);
         userRepository.save(user);
     }
+    public void deleteSoft(String userId){
+        User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("user not found"));
+        userRepository.delete(user);
+    }
 }
