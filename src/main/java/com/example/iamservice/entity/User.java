@@ -3,6 +3,8 @@ package com.example.iamservice.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.Where;
 
 import java.time.LocalDate;
 import java.util.Set;
@@ -14,6 +16,8 @@ import java.util.Set;
 @AllArgsConstructor
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
+@SQLDelete(sql = "UPDATE users SET deleted = true WHERE id=?")
+@Where(clause = "deleted = false")
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -34,4 +38,7 @@ public class User {
 
     @ManyToMany
     Set<Role> roles;
+    
+    @Column(nullable = false)
+    boolean deleted = false;
 }
