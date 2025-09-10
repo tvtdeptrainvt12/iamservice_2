@@ -170,4 +170,14 @@ public class UserService {
         User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("user not found"));
         userRepository.delete(user);
     }
+    public void lockUser(String userId){
+        User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("user not found"));
+        user.setBlock(true);
+        userRepository.save(user);
+    }
+    public void unlockUser(String userId){
+        User user = userRepository.findById(userId).orElseThrow(()-> new RuntimeException("user not found"));
+        user.setBlock(false);
+        userRepository.save(user);
+    }
 }
