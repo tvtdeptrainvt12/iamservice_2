@@ -14,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -27,7 +28,7 @@ import java.io.IOException;
 import java.util.List;
 
 @RestController
-@RequestMapping("/users")
+@RequestMapping("/api/users")
 @Slf4j
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
@@ -126,5 +127,14 @@ public class UserController {
         return ApiResponse.<String>builder()
                 .result("user da mo khoa")
                 .build();
+    }
+    @GetMapping("/search")
+    //@PreAuthorize("hasPermission('ROLE_ADMIN', 'READ_DATA')")
+    public Page<UserResponse> listUsers(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "5") int size
+    ){
+        return userService.getUser(keyword,page ,size);
     }
 }

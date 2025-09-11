@@ -18,6 +18,11 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -166,6 +171,7 @@ public class UserService {
         user.setAvatar(imageUrl);
         userRepository.save(user);
     }
+    // xóa mềm chỉ hind nó thôi không phải xóa vĩnh viễn
     public void deleteSoft(String userId){
         User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("user not found"));
         userRepository.delete(user);
@@ -179,5 +185,21 @@ public class UserService {
         User user = userRepository.findById(userId).orElseThrow(()-> new RuntimeException("user not found"));
         user.setBlock(false);
         userRepository.save(user);
+    }
+    //tìm kiếm và phân trang
+    public Page<UserResponse> getUser(String keyword, int page, int size){
+        Pageable pageable = PageRequest.of(page , size, Sort.by("email").ascending());
+
+        Specification<User> spec = (root, query, cb) -> {
+            if (keyword != null && !keyword.isEmpty()){
+                String likePattern = "%" + keyword.toLowerCase() + "%";
+                return cb.or(
+                        cb.like(cb.lower(root.get("email")), likePattern),
+                        cb.like(cb.lower(root.get("username")), likePattern));
+            }
+            return cb.conjunction();
+        };
+        Page<User> users = userRepository.findAll(spec, pageable);
+        return users.map(userMapper::toUserResponse);
     }
 }
