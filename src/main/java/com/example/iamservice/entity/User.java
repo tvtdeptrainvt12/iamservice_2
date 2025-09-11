@@ -18,7 +18,7 @@ import java.util.Set;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @SQLDelete(sql = "UPDATE users SET deleted = true WHERE id=?")
 @Where(clause = "deleted = false")
-public class User {
+public class User extends Auditable{
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     String id;
