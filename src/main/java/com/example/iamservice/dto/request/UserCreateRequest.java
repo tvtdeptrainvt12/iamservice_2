@@ -8,6 +8,7 @@ import lombok.*;
 import lombok.experimental.FieldDefaults;
 
 import java.time.LocalDate;
+import java.util.Set;
 
 @Data
 @Builder
@@ -23,4 +24,5 @@ public class UserCreateRequest {
     @Size(min = 3, message = "NOT_BLANK_PASSWORD")
     String password;
     LocalDate dob;
+    Set<String> roles;
 }
