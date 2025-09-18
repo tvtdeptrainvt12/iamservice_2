@@ -36,9 +36,6 @@ public class User extends Auditable{
     @Column(name = "avatar_url")
     String avatar;
 
-    @ManyToMany
-    Set<Role> roles;
-
     @Column(nullable = false)
     boolean deleted = false;
 

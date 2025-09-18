@@ -7,11 +7,12 @@ import com.example.iamservice.dto.request.RefreshRequest;
 import com.example.iamservice.dto.response.AuthResponse;
 import com.example.iamservice.dto.response.IntrospectResponse;
 import com.example.iamservice.entity.InvalidatedToken;
+import com.example.iamservice.entity.RolePermission;
 import com.example.iamservice.entity.User;
+import com.example.iamservice.entity.UserRole;
 import com.example.iamservice.exception.AppException;
 import com.example.iamservice.exception.ErrorCode;
-import com.example.iamservice.repository.InvalidatedTokenRepository;
-import com.example.iamservice.repository.UserRepository;
+import com.example.iamservice.repository.*;
 import com.nimbusds.jose.*;
 import com.nimbusds.jose.crypto.MACSigner;
 import com.nimbusds.jose.crypto.MACVerifier;
@@ -31,15 +32,17 @@ import org.springframework.util.CollectionUtils;
 import java.text.ParseException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.Date;
-import java.util.StringJoiner;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 @Slf4j
 public class AuthService {
+    private final RoleRepository roleRepository;
+    private final UserRoleRepository userRoleRepository;
+    private final PermissionRepository permissionRepository;
+    private final RolePermissionRepository rolePermissionRepository;
     UserRepository userRepository;
     InvalidatedTokenRepository invalidatedTokenRepository;
 
@@ -62,7 +65,7 @@ public class AuthService {
         boolean isValid = true;
         try {
             verifyToken(token, false);
-        }catch (AppException e){
+        } catch (AppException e) {
             isValid = false;
         }
         return IntrospectResponse.builder()
@@ -70,10 +73,10 @@ public class AuthService {
                 .build();
     }
 
-    public AuthResponse authenticate(AuthRequest request){
+    public AuthResponse authenticate(AuthRequest request) {
         var user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
-        if(user.isBlock()){
+        if (user.isBlock()) {
             throw new AppException(ErrorCode.USER_BLOCK);
         }
 
@@ -91,6 +94,7 @@ public class AuthService {
                 .authenticated(true)
                 .build();
     }
+
     public void logout(LogoutRequest request) throws ParseException, JOSEException {
         try {
             var signToken = verifyToken(request.getToken(), true);
@@ -102,40 +106,40 @@ public class AuthService {
                     .expiryTime(expiryTime)
                     .build();
             invalidatedTokenRepository.save(invalidatedToken);
-        }catch (AppException exception){
+        } catch (AppException exception) {
             log.info("Token already expired");
         }
 
     }
 
-   public AuthResponse refreshToken(RefreshRequest request)
-           throws ParseException, JOSEException {
+    public AuthResponse refreshToken(RefreshRequest request)
+            throws ParseException, JOSEException {
         var signedJWT = verifyToken(request.getToken(), true);
 
         var jit = signedJWT.getJWTClaimsSet().getJWTID();
         var expiryTime = signedJWT.getJWTClaimsSet().getExpirationTime();
 
-       InvalidatedToken invalidatedToken = InvalidatedToken.builder()
-               .id(jit)
-               .expiryTime(expiryTime)
-               .build();
-       invalidatedTokenRepository.save(invalidatedToken);
+        InvalidatedToken invalidatedToken = InvalidatedToken.builder()
+                .id(jit)
+                .expiryTime(expiryTime)
+                .build();
+        invalidatedTokenRepository.save(invalidatedToken);
 
-       var email = signedJWT.getJWTClaimsSet().getSubject();
+        var email = signedJWT.getJWTClaimsSet().getSubject();
 
-       var user = userRepository.findByEmail(email).orElseThrow(
-               () -> new AppException(ErrorCode.UNAUTHENTICATED)
-       );
+        var user = userRepository.findByEmail(email).orElseThrow(
+                () -> new AppException(ErrorCode.UNAUTHENTICATED)
+        );
 
-       var token = generateToken(user);
+        var token = generateToken(user);
 
-       return AuthResponse.builder()
-               .token(token)
-               .authenticated(true)
-               .build();
+        return AuthResponse.builder()
+                .token(token)
+                .authenticated(true)
+                .build();
     }
 
-    private String generateToken(User user){
+    private String generateToken(User user) {
         JWSHeader header = new JWSHeader(JWSAlgorithm.HS512);
 
         JWTClaimsSet jwtClaimsSet = new JWTClaimsSet.Builder()
@@ -157,10 +161,11 @@ public class AuthService {
             jwsObject.sign(new MACSigner(SIGNER_KEY.getBytes()));
             return jwsObject.serialize();
         } catch (JOSEException e) {
-            log.error("khong tao dc token",e);
+            log.error("khong tao dc token", e);
             throw new RuntimeException(e);
         }
     }
+
     private SignedJWT verifyToken(String token, boolean isRefresh)
             throws JOSEException, ParseException {
         JWSVerifier verifier = new MACVerifier(SIGNER_KEY.getBytes());
@@ -169,30 +174,36 @@ public class AuthService {
 
         Date expiryTime = (isRefresh)
                 ? new Date(signedJWT.getJWTClaimsSet().getIssueTime()
-                .toInstant().plus(REFRESHABLE_DURATION,ChronoUnit.SECONDS).toEpochMilli())
+                .toInstant().plus(REFRESHABLE_DURATION, ChronoUnit.SECONDS).toEpochMilli())
                 : signedJWT.getJWTClaimsSet().getExpirationTime();
 
         var verified = signedJWT.verify(verifier);
 
-        if(!(verified && expiryTime.after(new Date())))
+        if (!(verified && expiryTime.after(new Date())))
             throw new AppException(ErrorCode.UNAUTHENTICATED);
 
-        if(invalidatedTokenRepository.existsById(signedJWT.getJWTClaimsSet().getJWTID()))
+        if (invalidatedTokenRepository.existsById(signedJWT.getJWTClaimsSet().getJWTID()))
             throw new AppException(ErrorCode.UNAUTHENTICATED);
 
         return signedJWT;
 
     }
-    private String BuildScope(User user){
+
+    private String BuildScope(User user) {
         StringJoiner stringJoiner = new StringJoiner(" ");
 
-        if(!CollectionUtils.isEmpty(user.getRoles()))
-            user.getRoles().forEach(role -> {
-                stringJoiner.add("ROLE_" + role.getName());
-                if(!CollectionUtils.isEmpty(role.getPermissions()))
-                    role.getPermissions()
-                            .forEach(permission -> stringJoiner.add(permission.getName()));
+        List<UserRole> userRoles = userRoleRepository.findByUserId(user.getId());
+        userRoles.forEach(userRole -> {
+            roleRepository.findById(userRole.getRoleName()).ifPresent(role -> {
+                stringJoiner.add("ROLE_"+ role.getName());
+
+                List<RolePermission> mappings = rolePermissionRepository.findByRoleName(role.getName());
+                mappings.stream()
+                        .map(rp -> permissionRepository.findById(rp.getPermissionName()).orElse(null))
+                        .filter(Objects::nonNull)
+                        .forEach(permission -> stringJoiner.add(permission.getName()));
             });
+        });
         return stringJoiner.toString();
     }
 }

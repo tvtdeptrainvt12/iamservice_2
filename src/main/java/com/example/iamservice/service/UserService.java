@@ -5,14 +5,17 @@ import com.example.iamservice.constant.PredefinedRole;
 import com.example.iamservice.dto.request.ChangePasswordRequest;
 import com.example.iamservice.dto.request.UserCreateRequest;
 import com.example.iamservice.dto.request.UserUpdateRequest;
+import com.example.iamservice.dto.response.RoleResponse;
 import com.example.iamservice.dto.response.UserResponse;
 import com.example.iamservice.entity.Role;
 import com.example.iamservice.entity.User;
+import com.example.iamservice.entity.UserRole;
 import com.example.iamservice.exception.AppException;
 import com.example.iamservice.exception.ErrorCode;
 import com.example.iamservice.mapper.UserMapper;
 import com.example.iamservice.repository.RoleRepository;
 import com.example.iamservice.repository.UserRepository;
+import com.example.iamservice.repository.UserRoleRepository;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -33,17 +36,16 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 @Slf4j
 public class UserService {
+    private final UserRoleRepository userRoleRepository;
     private final RoleRepository roleRepository;
 
     UserRepository userRepository;
@@ -57,63 +59,102 @@ public class UserService {
 
 
     public UserResponse createUser(UserCreateRequest request) {
-
-        if(userRepository.existsByEmail(request.getEmail()))
+        if (userRepository.existsByEmail(request.getEmail()))
             throw new AppException(ErrorCode.USER_EXISTED);
 
+        // map request → entity
         User user = userMapper.toUser(request);
         user.setPassword(passwordEncoder.encode(request.getPassword()));
+        User savedUser = userRepository.save(user);
 
-        HashSet<Role> roles = new HashSet<>();
-        roleRepository.findById(PredefinedRole.USER_ROLE).ifPresent(roles::add);
+        // nếu không truyền role thì mặc định là USER
+        Set<String> rolesToAssign = (request.getRoles() == null || request.getRoles().isEmpty())
+                ? Set.of(PredefinedRole.USER_ROLE)
+                : request.getRoles();
 
-        user.setRoles(roles);
+        // gán role vào bảng user_role
+        rolesToAssign.forEach(roleName -> {
+            roleRepository.findById(roleName).ifPresent(role -> {
+                userRoleRepository.save(
+                        UserRole.builder()
+                                .userId(savedUser.getId())
+                                .roleName(role.getName())
+                                .build()
+                );
+            });
+        });
 
-        try {
-            user = userRepository.save(user);
-        } catch (DataIntegrityViolationException exception) {
-            throw new AppException(ErrorCode.USER_EXISTED);
-        }
-
-        return userMapper.toUserResponse(user);
+        return buildUserResponseWithRoles(savedUser);
     }
-
     public UserResponse updateUser(String userId, UserUpdateRequest request) {
         User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
 
         userMapper.updateUser(user, request);
         user.setPassword(passwordEncoder.encode(request.getPassword()));
+        userRepository.save(user);
 
-        var roles = roleRepository.findAllById(request.getRoles());
-        user.setRoles(new HashSet<>(roles));
+        // xóa role cũ
+        userRoleRepository.deleteByUserId(user.getId());
 
-        return userMapper.toUserResponse(userRepository.save(user));
+        // gán role mới
+        request.getRoles().forEach(roleName -> {
+            roleRepository.findById(roleName).ifPresent(role -> {
+                userRoleRepository.save(
+                        UserRole.builder()
+                                .userId(user.getId())
+                                .roleName(role.getName())
+                                .build()
+                );
+            });
+        });
+
+        return buildUserResponseWithRoles(user);
+    }
+
+    private UserResponse buildUserResponseWithRoles(User user) {
+        var response = userMapper.toUserResponse(user);
+
+        var userRoles = userRoleRepository.findByUserId(user.getId());
+        var roles = userRoles.stream()
+                .map(ur -> roleRepository.findById(ur.getRoleName()).orElse(null))
+                .filter(Objects::nonNull)
+                .map(role -> new RoleResponse(role.getName(), role.getDescription(), null))
+                .collect(Collectors.toSet());
+
+        response.setRoles(roles);
+        return response;
     }
 
     public UserResponse getMyInfo(){
         var context = SecurityContextHolder.getContext();
         String name = context.getAuthentication().getName();
 
-        User user = userRepository.findByEmail(name).orElseThrow(()->new AppException(ErrorCode.USER_NOT_EXISTED));
+        User user = userRepository.findByEmail(name)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
 
-        return userMapper.toUserResponse(user);
+        return buildUserResponseWithRoles(user);
     }
 
     public void deleteUser(String userId) {
         userRepository.deleteById(userId);
     }
 
-    //@PreAuthorize("hasRole('ADMIN')")
     public List<UserResponse> getUsers() {
         log.info("In method get Users");
-        return userRepository.findAll().stream().map(userMapper::toUserResponse).toList();
+        return userRepository.findAll()
+                .stream()
+                .map(this::buildUserResponseWithRoles)
+                .toList();
     }
+
     @PostAuthorize("returnObject.email == authentication.name")
     public UserResponse getUser(String id) {
-        log.info("in method get user by id");
-        return userMapper.toUserResponse(userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("User not found")));
+        log.info("In method get user by id");
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        return buildUserResponseWithRoles(user);
     }
+
     public void changePassword(String email, ChangePasswordRequest request){
         var user = userRepository.findByEmail(email)
                 .orElseThrow(() ->new AppException(ErrorCode.USER_NOT_EXISTED));
@@ -200,6 +241,6 @@ public class UserService {
             return cb.conjunction();
         };
         Page<User> users = userRepository.findAll(spec, pageable);
-        return users.map(userMapper::toUserResponse);
+        return users.map(this::buildUserResponseWithRoles);
     }
 }
