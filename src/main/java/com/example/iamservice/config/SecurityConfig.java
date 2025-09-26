@@ -1,5 +1,7 @@
 package com.example.iamservice.config;
 
+import com.example.iamservice.security.OAuth2LoginSuccessHandler;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -21,6 +23,7 @@ import org.springframework.web.filter.CorsFilter;
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
+@RequiredArgsConstructor
 public class SecurityConfig {
     private final String[] PUBLIC_ENDPOINTS = {
             "/users",
@@ -31,6 +34,8 @@ public class SecurityConfig {
     };
     @Autowired
     private CustomJwtDecoder customJwtDecoder;
+
+    private final OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
 
 
 
@@ -46,7 +51,15 @@ public class SecurityConfig {
                         )
                         .permitAll()
                         .anyRequest()
-                        .authenticated());
+                        .authenticated()
+                );
+        httpSecurity
+                .oauth2Login(oauth2 -> oauth2
+                        .successHandler(oAuth2LoginSuccessHandler)   // redirect sau khi login thành công
+                )
+                .logout(logout -> logout
+                        .logoutSuccessUrl("/").permitAll()
+                );
         httpSecurity.oauth2ResourceServer(oauth2 -> oauth2.jwt(jwtConfigurer -> jwtConfigurer
                         .decoder(customJwtDecoder)
                         .jwtAuthenticationConverter(jwtAuthenticationConverter()))

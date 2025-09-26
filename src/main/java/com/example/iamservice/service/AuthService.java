@@ -139,7 +139,7 @@ public class AuthService {
                 .build();
     }
 
-    private String generateToken(User user) {
+    String generateToken(User user) {
         JWSHeader header = new JWSHeader(JWSAlgorithm.HS512);
 
         JWTClaimsSet jwtClaimsSet = new JWTClaimsSet.Builder()
@@ -195,7 +195,7 @@ public class AuthService {
         List<UserRole> userRoles = userRoleRepository.findByUserId(user.getId());
         userRoles.forEach(userRole -> {
             roleRepository.findById(userRole.getRoleName()).ifPresent(role -> {
-                stringJoiner.add("ROLE_"+ role.getName());
+                stringJoiner.add("ROLE_" + role.getName());
 
                 List<RolePermission> mappings = rolePermissionRepository.findByRoleName(role.getName());
                 mappings.stream()
