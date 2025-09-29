@@ -5,6 +5,7 @@ import com.example.iamservice.constant.PredefinedRole;
 import com.example.iamservice.dto.request.ChangePasswordRequest;
 import com.example.iamservice.dto.request.UserCreateRequest;
 import com.example.iamservice.dto.request.UserUpdateRequest;
+import com.example.iamservice.dto.response.PermissionResponse;
 import com.example.iamservice.dto.response.RoleResponse;
 import com.example.iamservice.dto.response.UserResponse;
 import com.example.iamservice.entity.Role;
@@ -13,9 +14,7 @@ import com.example.iamservice.entity.UserRole;
 import com.example.iamservice.exception.AppException;
 import com.example.iamservice.exception.ErrorCode;
 import com.example.iamservice.mapper.UserMapper;
-import com.example.iamservice.repository.RoleRepository;
-import com.example.iamservice.repository.UserRepository;
-import com.example.iamservice.repository.UserRoleRepository;
+import com.example.iamservice.repository.*;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -47,6 +46,8 @@ import java.util.stream.Collectors;
 public class UserService {
     private final UserRoleRepository userRoleRepository;
     private final RoleRepository roleRepository;
+    private final RolePermissionRepository rolePermissionRepository;
+    private final PermissionRepository permissionRepository;
 
     UserRepository userRepository;
     Cloudinary cloudinary;
@@ -118,9 +119,18 @@ public class UserService {
         var roles = userRoles.stream()
                 .map(ur -> roleRepository.findById(ur.getRoleName()).orElse(null))
                 .filter(Objects::nonNull)
-                .map(role -> new RoleResponse(role.getName(), role.getDescription(), null))
-                .collect(Collectors.toSet());
+                .map(role -> {
+                    var rolePermissions = rolePermissionRepository.findByRoleName(role.getName());
 
+                    var perms = rolePermissions.stream()
+                            .map(rp -> permissionRepository.findById(rp.getPermissionName()).orElse(null))
+                            .filter(Objects::nonNull)
+                            .map(p -> new PermissionResponse(p.getName(), p.getDescription()))
+                            .collect(Collectors.toSet());
+
+                    return new RoleResponse(role.getName(), role.getDescription(), perms);
+                })
+                .collect(Collectors.toSet());
         response.setRoles(roles);
         return response;
     }
