@@ -61,7 +61,7 @@ public class UserController {
     }
 
     @GetMapping("/myInfo")
-    @PreAuthorize("hasPermission('ROLE_USER', 'READ_DATA')")
+    //@PreAuthorize("hasPermission('ROLE_USER', 'READ_DATA')")
     ApiResponse<UserResponse> getMyInfo(){
         return ApiResponse.<UserResponse>builder()
                 .result(userService.getMyInfo())

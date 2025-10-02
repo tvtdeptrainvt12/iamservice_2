@@ -8,6 +8,7 @@ import com.example.iamservice.dto.request.IntrospectRequest;
 import com.example.iamservice.service.AuthService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
@@ -18,6 +19,7 @@ import org.springframework.stereotype.Component;
 import com.nimbusds.jose.JOSEException;
 
 @Component
+@ConditionalOnProperty(name = "keycloak.enabled", havingValue = "false", matchIfMissing = true)
 public class CustomJwtDecoder implements JwtDecoder {
     @Value("${jwt.signerKey}")
     private String signerKey;

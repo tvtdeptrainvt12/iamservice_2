@@ -31,6 +31,7 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.access.prepost.PostAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -91,7 +92,9 @@ public class UserService {
         User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
 
         userMapper.updateUser(user, request);
-        user.setPassword(passwordEncoder.encode(request.getPassword()));
+        if (request.getPassword() != null && !request.getPassword().isBlank()) {
+            user.setPassword(passwordEncoder.encode(request.getPassword()));
+        }
         userRepository.save(user);
 
         // xóa role cũ
@@ -224,7 +227,8 @@ public class UserService {
     }
     // xóa mềm chỉ hind nó thôi không phải xóa vĩnh viễn
     public void deleteSoft(String userId){
-        User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("user not found"));
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("user not found"));
         userRepository.delete(user);
     }
     public void lockUser(String userId){

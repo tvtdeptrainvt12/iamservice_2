@@ -1,4 +1,4 @@
-package com.example.iamservice.security;
+package com.example.iamservice.config.security;
 
 import com.example.iamservice.service.GoogleAuthService;
 import lombok.RequiredArgsConstructor;
